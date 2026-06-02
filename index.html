@@ -1,41 +1,41 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Live Google Sheet Data</title>
 
 <style>
 body{
-    font-family:Arial,sans-serif;
+    font-family: Arial, sans-serif;
     margin:0;
-    background:#f5f5f5;
+    background:#f4f6f9;
 }
 
-.header{
-    background:#0f172a;
-    color:white;
-    padding:20px;
+header{
+    background:#1e293b;
+    color:#fff;
     text-align:center;
+    padding:20px;
 }
 
 .container{
     padding:20px;
 }
 
-.search-box{
+#search{
     width:100%;
     padding:12px;
-    margin-bottom:15px;
     border:1px solid #ccc;
-    border-radius:5px;
+    border-radius:6px;
+    margin-bottom:15px;
 }
 
-.table-container{
+.table-wrapper{
     overflow:auto;
-    background:white;
-    border-radius:10px;
-    box-shadow:0 0 10px rgba(0,0,0,0.1);
+    background:#fff;
+    border-radius:8px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
 }
 
 table{
@@ -47,6 +47,8 @@ th{
     background:#2563eb;
     color:white;
     padding:12px;
+    position:sticky;
+    top:0;
 }
 
 td{
@@ -59,77 +61,97 @@ tr:nth-child(even){
 }
 </style>
 </head>
-
 <body>
 
-<div class="header">
-<h1>Live Google Sheet Dashboard</h1>
-</div>
+<header>
+    <h1>Google Sheet Live Dashboard</h1>
+</header>
 
 <div class="container">
 
-<input type="text" id="search" class="search-box"
-placeholder="Search Data...">
+<input type="text" id="search" placeholder="Search..." />
 
-<div class="table-container">
-<table id="sheetTable"></table>
+<div class="table-wrapper">
+    <table id="sheetTable"></table>
 </div>
 
 </div>
 
 <script>
 
-const csvUrl =
-"https://docs.google.com/spreadsheets/d/1DBdjSigo4VWFmfCgL8Z8B4Xq4ZDKUSWOlv38duO1X20/gviz/tq?tqx=out:csv&gid=315964815";
+const SHEET_ID = "1DBdjSigo4VWFmfCgL8Z8B4Xq4ZDKUSWOlv38duO1X20";
+const GID = "315964815";
 
-async function loadSheet(){
+const CSV_URL =
+`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
 
-    const response = await fetch(csvUrl);
-    const csv = await response.text();
+async function loadData() {
 
-    const rows = csv.trim().split("\n");
-    let html = "";
+    try {
+
+        const response = await fetch(CSV_URL);
+
+        if(!response.ok){
+            throw new Error("Unable to access sheet");
+        }
+
+        const csv = await response.text();
+
+        const rows = csv.trim().split("\n");
+
+        let html = "";
+
+        rows.forEach((row,rowIndex)=>{
+
+            const cols = row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
+
+            html += "<tr>";
+
+            cols.forEach(col=>{
+
+                col = col.replace(/^"|"$/g,"");
+
+                if(rowIndex === 0){
+                    html += `<th>${col}</th>`;
+                } else {
+                    html += `<td>${col}</td>`;
+                }
+
+            });
+
+            html += "</tr>";
+        });
+
+        document.getElementById("sheetTable").innerHTML = html;
+
+    } catch(error){
+
+        document.getElementById("sheetTable").innerHTML =
+        `<tr><td>Error loading sheet data.<br>${error.message}</td></tr>`;
+
+    }
+}
+
+loadData();
+
+/* Refresh every 30 seconds */
+setInterval(loadData,30000);
+
+document.getElementById("search").addEventListener("keyup", function(){
+
+    const filter = this.value.toLowerCase();
+
+    const rows = document.querySelectorAll("#sheetTable tr");
 
     rows.forEach((row,index)=>{
 
-        const cols = row.split(",");
+        if(index===0) return;
 
-        html += "<tr>";
-
-        cols.forEach(col=>{
-
-            if(index===0){
-                html += `<th>${col}</th>`;
-            }else{
-                html += `<td>${col}</td>`;
-            }
-
-        });
-
-        html += "</tr>";
+        row.style.display =
+            row.innerText.toLowerCase().includes(filter)
+            ? ""
+            : "none";
     });
-
-    document.getElementById("sheetTable").innerHTML = html;
-}
-
-loadSheet();
-
-setInterval(loadSheet,30000);
-
-document.getElementById("search").addEventListener("keyup",function(){
-
-let filter=this.value.toLowerCase();
-let tr=document.querySelectorAll("#sheetTable tr");
-
-tr.forEach((row,index)=>{
-
-if(index===0) return;
-
-let text=row.innerText.toLowerCase();
-
-row.style.display=text.includes(filter)?"":"none";
-
-});
 
 });
 
