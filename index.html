@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Google Sheet Data</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th {
+            background: #007bff;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+        }
+
+        @media(max-width:768px){
+            .table-wrapper{
+                overflow-x:auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Live Google Sheet Data</h1>
+    
+    <div class="table-wrapper">
+        <div id="sheet-data" class="loading">Loading Data...</div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+<script>
+const sheetURL = "YOUR_GOOGLE_SHEET_CSV_URL";
+
+Papa.parse(sheetURL, {
+    download: true,
+    header: false,
+    complete: function(results) {
+
+        let data = results.data;
+
+        let html = '<table>';
+
+        data.forEach((row, index) => {
+            html += '<tr>';
+
+            row.forEach(cell => {
+                if(index === 0){
+                    html += `<th>${cell}</th>`;
+                } else {
+                    html += `<td>${cell}</td>`;
+                }
+            });
+
+            html += '</tr>';
+        });
+
+        html += '</table>';
+
+        document.getElementById('sheet-data').innerHTML = html;
+    }
+});
+</script>
+
+</body>
+</html>
