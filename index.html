@@ -1,117 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live Google Sheet Data</title>
-
-<style>
-body{
-    font-family: Arial, sans-serif;
-    margin:0;
-    background:#f4f6f9;
-}
-
-header{
-    background:#1e293b;
-    color:#fff;
-    text-align:center;
-    padding:20px;
-}
-
-.container{
-    padding:20px;
-}
-
-#search{
-    width:100%;
-    padding:12px;
-    border:1px solid #ccc;
-    border-radius:6px;
-    margin-bottom:15px;
-}
-
-.table-wrapper{
-    overflow:auto;
-    background:#fff;
-    border-radius:8px;
-    box-shadow:0 2px 10px rgba(0,0,0,0.1);
-}
-
-table{
-    width:100%;
-    border-collapse:collapse;
-}
-
-th{
-    background:#2563eb;
-    color:white;
-    padding:12px;
-    position:sticky;
-    top:0;
-}
-
-td{
-    padding:10px;
-    border:1px solid #ddd;
-}
-
-tr:nth-child(even){
-    background:#f8fafc;
-}
-</style>
-</head>
-<body>
-
-<header>
-    <h1>Google Sheet Live Dashboard</h1>
-</header>
-
-<div class="container">
-
-<input type="text" id="search" placeholder="Search..." />
-
-<div class="table-wrapper">
-    <table id="sheetTable"></table>
-</div>
-
-</div>
-
 <script>
+const sheetURL =
+"https://docs.google.com/spreadsheets/d/1DBdjSigo4VWFmfCgL8Z8B4Xq4ZDKUSWOlv38duO1X20/gviz/tq?tqx=out:csv&gid=315964815";
 
-const SHEET_ID = "1DBdjSigo4VWFmfCgL8Z8B4Xq4ZDKUSWOlv38duO1X20";
-const GID = "315964815";
-
-const CSV_URL =
-`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
-
-async function loadData() {
+async function loadSheet() {
 
     try {
 
-        const response = await fetch(CSV_URL);
+        const response = await fetch(sheetURL);
 
-        if(!response.ok){
-            throw new Error("Unable to access sheet");
+        if (!response.ok) {
+            throw new Error("Sheet not accessible");
         }
 
         const csv = await response.text();
 
-        const rows = csv.trim().split("\n");
+        const rows = csv.split("\n");
 
         let html = "";
 
-        rows.forEach((row,rowIndex)=>{
+        rows.forEach((row,index)=>{
 
-            const cols = row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g);
+            const cols = row.split(",");
 
             html += "<tr>";
 
             cols.forEach(col=>{
 
-                col = col.replace(/^"|"$/g,"");
-
-                if(rowIndex === 0){
+                if(index===0){
                     html += `<th>${col}</th>`;
                 } else {
                     html += `<td>${col}</td>`;
@@ -124,38 +39,15 @@ async function loadData() {
 
         document.getElementById("sheetTable").innerHTML = html;
 
-    } catch(error){
+    } catch(err) {
 
         document.getElementById("sheetTable").innerHTML =
-        `<tr><td>Error loading sheet data.<br>${error.message}</td></tr>`;
+        `<tr><td>${err.message}</td></tr>`;
 
+        console.error(err);
     }
 }
 
-loadData();
-
-/* Refresh every 30 seconds */
-setInterval(loadData,30000);
-
-document.getElementById("search").addEventListener("keyup", function(){
-
-    const filter = this.value.toLowerCase();
-
-    const rows = document.querySelectorAll("#sheetTable tr");
-
-    rows.forEach((row,index)=>{
-
-        if(index===0) return;
-
-        row.style.display =
-            row.innerText.toLowerCase().includes(filter)
-            ? ""
-            : "none";
-    });
-
-});
-
+loadSheet();
+setInterval(loadSheet,30000);
 </script>
-
-</body>
-</html>
